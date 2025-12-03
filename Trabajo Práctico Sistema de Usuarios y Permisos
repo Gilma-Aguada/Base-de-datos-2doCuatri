@@ -1,0 +1,13 @@
+1- CREATE USER 'usuario1'@'localhost' IDENTIFIED BY 'clave123';
+2- CREATE USER 'lector_pubs'@'localhost' IDENTIFIED BY 'clave123';
+GRANT SELECT ON pubs.* TO 'lector_pubs'@'localhost';
+3- CREATE USER 'escritor_pubs'@'localhost' IDENTIFIED BY 'clave123';
+GRANT INSERT, UPDATE, DELETE ON pubs.* TO 'escritor_pubs'@'localhost';
+4- CREATE USER 'admin_pubs'@'localhost' IDENTIFIED BY 'clave123';
+GRANT ALL PRIVILEGES ON pubs.* TO 'admin_pubs'@'localhost';
+5- CREATE USER 'lector_titles'@'localhost' IDENTIFIED BY 'clave123';
+GRANT SELECT ON pubs.titles TO 'lector_titles'@'localhost';
+6- DROP USER 'admin_pubs'@'localhost';
+7- DROP USER 'lector_pubs'@'localhost', 'escritor_pubs'@'localhost';
+8- DROP USER 'lector_titles'@'localhost';
+9- SHOW GRANTS FOR 'usuario1'@'localhost';
