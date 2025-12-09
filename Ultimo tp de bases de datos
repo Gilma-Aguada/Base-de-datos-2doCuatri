@@ -1,0 +1,121 @@
+DROP DATABASE IF EXISTS zonarefridb;
+CREATE DATABASE zonarefridb;
+USE zonarefridb;
+
+CREATE TABLE clientes(
+   id_cliente INT PRIMARY KEY AUTO_INCREMENT,
+   nombre VARCHAR(100),
+   email VARCHAR(100),
+   telefono INT 
+);
+
+CREATE TABLE productos(
+    id_producto INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100),
+    precio DECIMAL(38,2),
+    stock INT
+);
+CREATE TABLE pedidos(
+    id_pedido INT PRIMARY KEY AUTO_INCREMENT,
+    id_cliente INT,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    estado_pago VARCHAR(50),
+    direccion_envio VARCHAR(200),
+    FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)
+);
+
+
+CREATE TABLE pedido_detalle(
+   id_pedido INT,
+   id_producto INT,
+   cantidad INT,
+   precio_unitario Decimal(38,2),
+   PRIMARY KEY (id_pedido, id_producto),
+   FOREIGN KEY (id_pedido) REFERENCES pedidos(id_pedido),
+   FOREIGN KEY (id_producto) REFERENCES productos(id_producto)
+);
+USE zonarefridb;
+
+CREATE TABLE empleados (
+    id_empleado INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    puesto VARCHAR(50) NOT NULL,
+    fecha_contratacion DATE NOT NULL,
+    salario DECIMAL(10, 2),
+    email VARCHAR(100) UNIQUE,
+    telefono VARCHAR(20),
+    direccion VARCHAR(200)
+);
+DESCRIBE producto;
+DESCRIBE pedido_detalle;
+
+USE zonarefridb;
+
+-- ----------------------------------------------------------------------
+-- Función: calcular_total_ventas
+-- ----------------------------------------------------------------------
+DELIMITER //
+
+CREATE FUNCTION calcular_total_ventas(p_mes INT, p_anio INT)
+RETURNS DECIMAL(38, 2)
+READS SQL DATA
+BEGIN
+    DECLARE total_ventas DECIMAL(38, 2) DEFAULT 0.00;
+
+    -- Paso 1: Sumar los subtotales (cantidad * precio_unitario) de todos los detalles
+    --         cuyos pedidos se encuentran en el mes y año especificados.
+    SELECT 
+        COALESCE(SUM(pd.cantidad * pd.precio_unitario), 0.00) INTO total_ventas
+    FROM 
+        pedido_detalle pd
+    JOIN 
+        pedidos p ON pd.id_pedido = p.id_pedido
+    WHERE 
+        -- Filtra por el mes y año de la columna 'fecha' del pedido
+        MONTH(p.fecha) = p_mes 
+        AND YEAR(p.fecha) = p_anio
+        -- Considera solo pedidos PAGADOS como "ventas" realizadas
+        AND p.estado_pago = 'PAGADO'; 
+
+    RETURN total_ventas;
+END //
+
+DELIMITER ;
+
+-- Llama a la función para el mes 11 y año 2025
+SELECT calcular_total_ventas(11, 2025) AS Total_Ventas_Noviembre_2025;
+USE zonarefridb;
+
+-- Cambiar el delimitador para permitir la definición de la función
+DELIMITER //
+
+-- (Opcional) Eliminar la función si ya existe
+DROP FUNCTION IF EXISTS obtener_nombre_empleado //
+
+CREATE FUNCTION obtener_nombre_empleado(p_id_empleado INT)
+RETURNS VARCHAR(201) -- Tamaño suficiente para nombre (100) + espacio (1) + apellido (100)
+READS SQL DATA
+BEGIN
+    DECLARE nombre_completo VARCHAR(201);
+
+    -- Concatenar nombre y apellido del empleado con el ID proporcionado
+    SELECT 
+        CONCAT(nombre, ' ', apellido) 
+    INTO 
+        nombre_completo
+    FROM 
+        empleados
+    WHERE 
+        id_empleado = p_id_empleado;
+
+    -- Si no se encuentra el ID, devolver un mensaje descriptivo
+    IF nombre_completo IS NULL THEN
+        RETURN 'Empleado no encontrado';
+    END IF;
+
+    RETURN nombre_completo;
+END //
+
+-- Restaurar el delimitador por defecto
+DELIMITER ;
