@@ -1,0 +1,207 @@
+DROP DATABASE IF EXISTS zonarefridb;
+CREATE DATABASE zonarefridb;
+USE zonarefridb;
+
+CREATE TABLE clientes(
+   id_cliente INT PRIMARY KEY AUTO_INCREMENT,
+   nombre VARCHAR(100),
+   email VARCHAR(100),
+   telefono INT 
+);
+
+CREATE TABLE productos(
+    id_producto INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100),
+    precio DECIMAL(38,2),
+    stock INT
+);
+CREATE TABLE pedidos(
+    id_pedido INT PRIMARY KEY AUTO_INCREMENT,
+    id_cliente INT,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    estado_pago VARCHAR(50),
+    direccion_envio VARCHAR(200),
+    FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)
+);
+
+
+CREATE TABLE pedido_detalle(
+   id_pedido INT,
+   id_producto INT,
+   cantidad INT,
+   precio_unitario Decimal(38,2),
+   PRIMARY KEY (id_pedido, id_producto),
+   FOREIGN KEY (id_pedido) REFERENCES pedidos(id_pedido),
+   FOREIGN KEY (id_producto) REFERENCES productos(id_producto)
+);
+USE zonarefridb;
+
+CREATE TABLE empleados (
+    id_empleado INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    puesto VARCHAR(50) NOT NULL,
+    fecha_contratacion DATE NOT NULL,
+    salario DECIMAL(10, 2),
+    email VARCHAR(100) UNIQUE,
+    telefono VARCHAR(20),
+    direccion VARCHAR(200)
+);
+INSERT INTO empleados (nombre, apellido, puesto, fecha_contratacion, salario, email, telefono, direccion)
+VALUES
+('Juan', 'Pérez', 'Vendedor', '2021-03-15', 350000.00, 'juan.perez@empresa.com', '1134567890', 'Av. Siempre Viva 123'),
+('María', 'Gómez', 'Administrativa', '2020-07-20', 420000.00, 'maria.gomez@empresa.com', '1145678901', 'Calle Flores 456'),
+('Carlos', 'Ramírez', 'Técnico', '2019-11-10', 380000.00, 'carlos.ramirez@empresa.com', '1156789012', 'Calle Luna 789'),
+('Lucía', 'Fernández', 'Supervisora', '2022-01-05', 500000.00, 'lucia.fernandez@empresa.com', '1167890123', 'Av. Libertad 101'),
+('Sofía', 'Martínez', 'Vendedora', '2021-08-18', 360000.00, 'sofia.martinez@empresa.com', '1178901234', 'Calle Sol 202'),
+('Diego', 'López', 'Técnico', '2023-02-12', 390000.00, 'diego.lopez@empresa.com', '1189012345', 'Pasaje Río 303'),
+('Valentina', 'Ruiz', 'Administrativa', '2020-05-30', 410000.00, 'valentina.ruiz@empresa.com', '1190123456', 'Calle Norte 404'),
+('Javier', 'Silva', 'Gerente', '2018-09-25', 650000.00, 'javier.silva@empresa.com', '1198765432', 'Av. Central 505'),
+('Martina', 'Castro', 'Vendedora', '2022-06-14', 340000.00, 'martina.castro@empresa.com', '1187654321', 'Boulevard Sur 606'),
+('Tomás', 'Ortiz', 'Repartidor', '2023-04-01', 300000.00, 'tomas.ortiz@empresa.com', '1176543210', 'Calle Este 707');
+
+DESCRIBE producto;
+DESCRIBE pedido_detalle;
+
+USE zonarefridb;
+
+-- ----------------------------------------------------------------------
+-- Función: calcular_total_ventas
+-- ----------------------------------------------------------------------
+DELIMITER //
+
+CREATE FUNCTION calcular_total_ventas(p_mes INT, p_anio INT)
+RETURNS DECIMAL(38, 2)
+READS SQL DATA
+BEGIN
+    DECLARE total_ventas DECIMAL(38, 2) DEFAULT 0.00;
+
+    -- Paso 1: Sumar los subtotales (cantidad * precio_unitario) de todos los detalles
+    --         cuyos pedidos se encuentran en el mes y año especificados.
+    SELECT 
+        COALESCE(SUM(pd.cantidad * pd.precio_unitario), 0.00) INTO total_ventas
+    FROM 
+        pedido_detalle pd
+    JOIN 
+        pedidos p ON pd.id_pedido = p.id_pedido
+    WHERE 
+        -- Filtra por el mes y año de la columna 'fecha' del pedido
+        MONTH(p.fecha) = p_mes 
+        AND YEAR(p.fecha) = p_anio
+        -- Considera solo pedidos PAGADOS como "ventas" realizadas
+        AND p.estado_pago = 'PAGADO'; 
+
+    RETURN total_ventas;
+END //
+
+DELIMITER ;
+
+-- Llama a la función para el mes 11 y año 2025
+SELECT calcular_total_ventas(11, 2025) AS Total_Ventas_Noviembre_2025;
+USE zonarefridb;
+
+-- Cambiar el delimitador para permitir la definición de la función
+DELIMITER //
+
+-- (Opcional) Eliminar la función si ya existe
+DROP FUNCTION IF EXISTS obtener_nombre_empleado //
+
+CREATE FUNCTION obtener_nombre_empleado(p_id_empleado INT)
+RETURNS VARCHAR(201) -- Tamaño suficiente para nombre (100) + espacio (1) + apellido (100)
+READS SQL DATA
+BEGIN
+    DECLARE nombre_completo VARCHAR(201);
+
+    -- Concatenar nombre y apellido del empleado con el ID proporcionado
+    SELECT 
+        CONCAT(nombre, ' ', apellido) 
+    INTO 
+        nombre_completo
+    FROM 
+        empleados
+    WHERE 
+        id_empleado = p_id_empleado;
+
+    -- Si no se encuentra el ID, devolver un mensaje descriptivo
+    IF nombre_completo IS NULL THEN
+        RETURN 'Empleado no encontrado';
+    END IF;
+
+    RETURN nombre_completo;
+END //
+
+-- Restaurar el delimitador por defecto
+DELIMITER ;
+-- Prueba
+-- Probar con un ID que existe
+SELECT obtener_nombre_empleado(7) AS NombreEmpleado;
+
+-- Probar con otro ID
+SELECT obtener_nombre_empleado(5) AS NombreEmpleado;
+
+-- Probar con un ID que no existe
+SELECT obtener_nombre_empleado(20) AS NombreEmpleado;
+
+USE zonarefridb;
+
+DROP DATABASE IF EXISTS Colegio;
+CREATE DATABASE colegio;
+USE colegio;
+
+-- Tabla de alumnos
+CREATE TABLE alumnos (
+    id_alumno INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100),
+    apellido VARCHAR(100),
+    email VARCHAR(100) UNIQUE
+);
+
+-- Tabla de cursos
+CREATE TABLE cursos (
+    id_curso INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_curso VARCHAR(100)
+);
+
+-- Tabla de inscripciones con nota
+CREATE TABLE inscripciones (
+    id_inscripcion INT PRIMARY KEY AUTO_INCREMENT,
+    id_alumno INT,
+    id_curso INT,
+    nota DECIMAL(5,2),
+    FOREIGN KEY (id_alumno) REFERENCES alumnos(id_alumno),
+    FOREIGN KEY (id_curso) REFERENCES cursos(id_curso)
+);
+
+INSERT INTO cursos (nombre_curso) VALUES
+('Matemática'),
+('Historia'),
+('Física'),
+('Programación'),
+('Inglés');
+
+INSERT INTO alumnos (nombre, apellido, email) VALUES
+('Juan', 'Pérez', 'juan.perez@gmail.com'),
+('María', 'Gómez', 'maria.gomez@gmail.com'),
+('Lautaro', 'Ramírez', 'lauti.ramirez@gmail.com'),
+('Lucía', 'Fernández', 'lucia.fernandez@gmail.com'),
+('Sofía', 'Martínez', 'sofia.martinez@gmail.com'),
+('Diego', 'López', 'diego.lopez@gmail.com'),
+('Valentina', 'Ruiz', 'valentina.ruiz@gmail.com'),
+('Santino', 'Silva', 'santi.silva@gmail.com'),
+('Martina', 'Castro', 'martina.castro@gmail.com'),
+('Tomás', 'Ortiz', 'tomas.ortiz@gmail.com');
+
+INSERT INTO inscripciones (id_alumno, id_curso, nota) VALUES
+(1, 1, 8.5),
+(2, 1, 7.0),
+(3, 1, 9.0),
+(4, 2, 6.5),
+(5, 2, 7.5),
+(6, 2, 8.0),
+(7, 3, 9.0),
+(8, 3, 8.5),
+(9, 4, 7.5),
+(10, 4, 9.0),
+(1, 5, 8.0),
+(2, 5, 9.5);
+
