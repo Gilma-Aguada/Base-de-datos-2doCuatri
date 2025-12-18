@@ -1,0 +1,54 @@
+// a) Activar "local" e imprimir sus colecciones
+use('local');
+print("Colecciones en local:");
+db.getCollectionNames();
+
+// b) Activar "test" e imprimir sus colecciones
+use('test');
+print("Colecciones en test:");
+db.getCollectionNames();
+
+// c) Activar la base de datos "baseEjemplo2"
+use('baseEjemplo2');
+
+// d) Mostrar colecciones en "baseEjemplo2" (estará vacío)
+print("Colecciones en baseEjemplo2 inicial:");
+db.getCollectionNames();
+
+// e) Crear colección usuarios con dos documentos
+db.usuarios.insertMany([
+  { "nombre": "Gilma", "clave": "clave123" },
+  { "nombre": "Alumno", "clave": "abc456" }
+]);
+ // f) Mostrar nuevamente las colecciones (ahora aparecerá "usuarios")
+print("Colecciones en baseEjemplo2 final:");
+db.getCollectionNames();
+
+// --- SEGUNDA PARTE DEL TP ---
+
+// g) Insertar 2 documentos en la colección clientes
+use('pubs');
+db.clientes.insertMany([
+  { "_id": 1, "nombre": "Ana García", "clave": "ana123" },
+  { "_id": 2, "nombre": "Luis Torres", "clave": "luis456" }
+]);
+
+// h) Intentar insertar clave repetida (esto dará el error esperado)
+db.clientes.insertOne({ "_id": 1, "nombre": "Repetido", "clave": "error" });
+
+// i) Mostrar documentos de libros
+db.libros.find();
+
+// j) Crear base "blog" y k) agregar post
+use('blog');
+db.posts.insertOne({ "titulo": "Mi post", "autor": "Gilma" });
+
+// l) Mostrar bases de datos
+db.adminCommand({ listDatabases: 1 });
+
+// m) Eliminar colección y n) eliminar base "blog"
+db.posts.drop();
+db.dropDatabase();
+
+// Verificación final
+db.adminCommand({ listDatabases: 1 });
